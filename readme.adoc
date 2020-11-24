@@ -16,7 +16,7 @@ Usage of ./cribbageboard:
 
 == Example
 
-image::board.svg[Example Board]
+image::board.png[Example Board]
 
 == Is it good?
 
