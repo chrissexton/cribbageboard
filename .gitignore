@@ -90,5 +90,5 @@ tags
 [._]*.un~
 
 .idea/
-out.svg
+out.*
 cribbageboard
