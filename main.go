@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"math"
 	"os"
 
@@ -14,6 +15,7 @@ var (
 	zDepth  = flag.Float64("zdepth", 0.125, "material thickness")
 	zTravel = flag.Float64("ztravel", 0.150, "safe travel height")
 	bitSize = flag.Float64("bitsize", 0.125, "diameter of end mill")
+	outFile = flag.String("out", "", "file output, empty for stdout")
 
 	dpi       = 72
 	oneEighth = int(math.Ceil(float64(dpi) / 8))
@@ -89,12 +91,21 @@ func main() {
 	width := oneEighth * 28 * 2
 	height := oneEighth * 120
 
+	out := os.Stdout
+	if *outFile != "" {
+		var err error
+		out, err = os.Create(*outFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	var canvas cursor
 	switch *format {
 	case "svg":
-		canvas = mkSVG(os.Stdout)
+		canvas = mkSVG(out)
 	case "nc":
-		canvas = mkNC(os.Stdout, *zDepth, *zTravel, *bitSize)
+		canvas = mkNC(out, *zDepth, *zTravel, *bitSize)
 	}
 
 	canvas.Start(width, height)
