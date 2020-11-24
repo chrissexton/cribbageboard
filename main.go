@@ -11,11 +11,13 @@ import (
 )
 
 var (
-	format  = flag.String("format", "nc", "output format (svg,nc)")
-	zDepth  = flag.Float64("zdepth", 0.125, "material thickness")
-	zTravel = flag.Float64("ztravel", 0.150, "safe travel height")
-	bitSize = flag.Float64("bitsize", 0.125, "diameter of end mill")
-	outFile = flag.String("out", "", "file output, empty for stdout")
+	tpls     = []string{"around", "snake"}
+	format   = flag.String("format", "nc", "output format (svg,nc)")
+	zDepth   = flag.Float64("zdepth", 0.125, "material thickness")
+	zTravel  = flag.Float64("ztravel", 0.150, "safe travel height")
+	bitSize  = flag.Float64("bitsize", 0.125, "diameter of end mill")
+	outFile  = flag.String("out", "", "file output, empty for stdout")
+	template = flag.String("tpl", "snake", fmt.Sprintf("template (%v)", tpls))
 
 	dpi       = 72
 	oneEighth = int(math.Ceil(float64(dpi) / 8))
@@ -44,7 +46,7 @@ func (n nc) Circle(x, y, r int, s ...string) {
 	fmt.Fprintf(n.f, "G0 X%.5f Y%.5f\n", fx, fy)
 	// For the drill operation, plunge half the bit size at a time and then
 	// resurface for material removal
-	for d := 0-n.bitSize/2; d >= n.zDepth; d -= n.bitSize / 2 {
+	for d := 0 - n.bitSize/2; d >= n.zDepth; d -= n.bitSize / 2 {
 		fmt.Fprintf(n.f, "G1 Z%.5f F9.0\n", d)
 		// If we're not at depth, we need to move up, otherwise this is a wasted
 		// instruction since we will immediately move to travel height
@@ -110,29 +112,61 @@ func main() {
 
 	canvas.Start(width, height)
 
+	switch *template {
+	case "around":
+		around(canvas)
+	case "snake":
+		snake(canvas)
+	}
+
+	canvas.End()
+}
+
+func snake(canvas cursor) {
 	x := oneEighth * 5
 	y := oneEighth
 
 	groupSeparator := oneEighth * 3
 	offset := oneEighth * 6
 
-	row(canvas, x, y+offset)
-	row(canvas, x+groupSeparator, y+offset)
+	row(canvas, x, y+offset, 8)
+	row(canvas, x+groupSeparator, y+offset, 8)
 
-	col(canvas, x+offset, y)
-	col(canvas, x+offset, y+groupSeparator)
+	row(canvas, x+groupSeparator*3, y+offset, 8)
+	row(canvas, x+groupSeparator*4, y+offset, 8)
+
+	row(canvas, x+groupSeparator*6, y+offset, 8)
+	row(canvas, x+groupSeparator*7, y+offset, 8)
+
+	y = groupSeparator*10+oneEighth*10*8
+	x += oneEighth/2
+
+	col(canvas, x, y, 2)
+	col(canvas, x, y+oneEighth*2, 2)
+}
+
+func around(canvas cursor) {
+	x := oneEighth * 5
+	y := oneEighth
+
+	groupSeparator := oneEighth * 3
+	offset := oneEighth * 6
+
+	row(canvas, x, y+offset, 9)
+	row(canvas, x+groupSeparator, y+offset, 9)
+
+	col(canvas, x+offset, y, 3)
+	col(canvas, x+offset, y+groupSeparator, 3)
 
 	bottomY := offset*2 + 101*oneEighth
 
-	col(canvas, x+offset, y+bottomY)
-	col(canvas, x+offset, y+groupSeparator+bottomY)
+	col(canvas, x+offset, y+bottomY, 3)
+	col(canvas, x+offset, y+groupSeparator+bottomY, 3)
 
 	x += oneEighth*11 + oneEighth*15*2
 
-	row(canvas, x, y+offset)
-	row(canvas, x+groupSeparator, y+offset)
-
-	canvas.End()
+	row(canvas, x, y+offset, 9)
+	row(canvas, x+groupSeparator, y+offset, 9)
 }
 
 func mkSVG(f *os.File) cursor {
@@ -141,15 +175,15 @@ func mkSVG(f *os.File) cursor {
 	return canvas
 }
 
-func col(canvas cursor, x, y int) {
-	for i := 0; i < 3; i++ {
+func col(canvas cursor, x, y, n int) {
+	for i := 0; i < n; i++ {
 		clusterHorizontal(canvas, x, y)
 		x += 2*oneEighth + 5*2*oneEighth
 	}
 }
 
-func row(canvas cursor, x, y int) {
-	for i := 0; i < 9; i++ {
+func row(canvas cursor, x, y, n int) {
+	for i := 0; i < n; i++ {
 		clusterVertical(canvas, x, y)
 		y += 2*oneEighth + 5*2*oneEighth
 	}
