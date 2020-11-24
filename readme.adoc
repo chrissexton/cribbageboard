@@ -8,6 +8,8 @@ Usage of ./cribbageboard:
         diameter of end mill (default 0.125)
   -format string
         output format (svg,nc) (default "nc")
+  -out string
+        file output, empty for stdout
   -zdepth float
         material thickness (default 0.125)
   -ztravel float
