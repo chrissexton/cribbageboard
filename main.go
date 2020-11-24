@@ -9,10 +9,15 @@ import (
 	svg "github.com/ajstarks/svgo"
 )
 
-var format = flag.String("format", "nc", "output format (svg,nc)")
-var dpi = 72
+var (
+	format  = flag.String("format", "nc", "output format (svg,nc)")
+	zDepth  = flag.Float64("zdepth", 0.125, "material thickness")
+	zTravel = flag.Float64("ztravel", 0.150, "safe travel height")
+	bitSize = flag.Float64("bitsize", 0.125, "diameter of end mill")
 
-var oneEighth = int(math.Ceil(float64(dpi) / 8))
+	dpi       = 72
+	oneEighth = int(math.Ceil(float64(dpi) / 8))
+)
 
 type cursor interface {
 	Circle(x, y, r int, s ...string)
@@ -28,14 +33,23 @@ type nc struct {
 
 	zTravel float64
 	zDepth  float64
+	bitSize float64
 }
 
 func (n nc) Circle(x, y, r int, s ...string) {
-	fx := float64(x)/float64(dpi)
-	fy := float64(y)/float64(dpi)
+	fx := float64(x) / float64(dpi)
+	fy := float64(y) / float64(dpi)
 	fmt.Fprintf(n.f, "G0 X%.5f Y%.5f\n", fx, fy)
-	fmt.Fprintf(n.f, "G1 Z%.5f F9.0\n", 0.0)
-	fmt.Fprintf(n.f, "G1 Z%.5f F9.0\n", n.zDepth)
+	// For the drill operation, plunge half the bit size at a time and then
+	// resurface for material removal
+	for d := 0-n.bitSize/2; d >= n.zDepth; d -= n.bitSize / 2 {
+		fmt.Fprintf(n.f, "G1 Z%.5f F9.0\n", d)
+		// If we're not at depth, we need to move up, otherwise this is a wasted
+		// instruction since we will immediately move to travel height
+		if d > n.zDepth {
+			fmt.Fprintf(n.f, "G1 Z%.5f F9.0\n", 0.0)
+		}
+	}
 	fmt.Fprintf(n.f, "G1 Z%.5f F9.0\n", n.zTravel)
 }
 
@@ -53,13 +67,20 @@ func (n *nc) Start(w, h int, ns ...string) {
 	n.zDepth = -0.125
 	n.zTravel = 0.15
 
+	n.bitSize = 0.125
+
 	fmt.Fprintf(n.f, "G20\n")
 	fmt.Fprintf(n.f, "G90\n")
 	fmt.Fprintf(n.f, "G1 Z%.5f F9.0\n", n.zTravel)
 }
 
-func mkNC(f *os.File) *nc {
-	return &nc{f: f}
+func mkNC(f *os.File, zDepth, zTravel, bitSize float64) *nc {
+	return &nc{
+		f:       f,
+		zDepth:  zDepth,
+		zTravel: zTravel,
+		bitSize: bitSize,
+	}
 }
 
 func main() {
@@ -73,7 +94,7 @@ func main() {
 	case "svg":
 		canvas = mkSVG(os.Stdout)
 	case "nc":
-		canvas = mkNC(os.Stdout)
+		canvas = mkNC(os.Stdout, *zDepth, *zTravel, *bitSize)
 	}
 
 	canvas.Start(width, height)
