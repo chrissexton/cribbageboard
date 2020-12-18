@@ -13,7 +13,7 @@ import (
 var (
 	tpls     = []string{"around", "snake"}
 	format   = flag.String("format", "nc", "output format (svg,nc)")
-	zDepth   = flag.Float64("zdepth", 0.125, "material thickness")
+	zDepth   = flag.Float64("zdepth", -0.125, "material thickness")
 	zTravel  = flag.Float64("ztravel", 0.150, "safe travel height")
 	bitSize  = flag.Float64("bitsize", 0.125, "diameter of end mill")
 	outFile  = flag.String("out", "", "file output, empty for stdout")
@@ -68,11 +68,6 @@ func (n *nc) Start(w, h int, ns ...string) {
 	n.width = w
 	n.height = h
 
-	n.zDepth = -0.125
-	n.zTravel = 0.15
-
-	n.bitSize = 0.125
-
 	fmt.Fprintf(n.f, "G20\n")
 	fmt.Fprintf(n.f, "G90\n")
 	fmt.Fprintf(n.f, "G1 Z%.5f F9.0\n", n.zTravel)
@@ -90,8 +85,8 @@ func mkNC(f *os.File, zDepth, zTravel, bitSize float64) *nc {
 func main() {
 	flag.Parse()
 
-	width := oneEighth * 28 * 2
-	height := oneEighth * 120
+	width := dpi * 96
+	height := dpi * 48
 
 	out := os.Stdout
 	if *outFile != "" {
@@ -123,8 +118,8 @@ func main() {
 }
 
 func snake(canvas cursor) {
-	x := oneEighth * 5
-	y := oneEighth
+	x := int(6 * float64(dpi))
+	y := int(6.5 * float64(dpi))
 
 	groupSeparator := oneEighth * 3
 	offset := oneEighth * 6
@@ -138,7 +133,7 @@ func snake(canvas cursor) {
 	row(canvas, x+groupSeparator*6, y+offset, 8)
 	row(canvas, x+groupSeparator*7, y+offset, 8)
 
-	y = groupSeparator*10+oneEighth*10*8
+	y = 20*dpi+(dpi/2)
 	x += oneEighth/2
 
 	col(canvas, x, y, 2)
