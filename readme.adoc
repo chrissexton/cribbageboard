@@ -5,21 +5,27 @@ This project outputs g-code to cut a cromulent cribbage board. Set flags for mat
 ----
 Usage of ./cribbageboard:
   -bitsize float
-        diameter of end mill (default 0.125)
+    	diameter of end mill (default 0.125)
   -format string
-        output format (svg,nc) (default "nc")
+    	output format (svg,nc) (default "nc")
   -out string
-        file output, empty for stdout
+    	file output, empty for stdout
+  -tpl string
+    	template ([around snake]) (default "snake")
   -zdepth float
-        material thickness (default 0.125)
+    	material thickness (default -0.125)
   -ztravel float
-        safe travel height (default 0.15)
+    	safe travel height (default 0.15)
 ----
 
 == Example
 
 image::board.png[Example Board]
 
+This example is the "snake" board type. If you'd like a version that goes around a border, use the "around" template.
+
+image::result.png[Resulting Cribbage Board]
+
 == Is it good?
 
-I think it works, but it could be optimized in various ways.
+I think it works, but it could be optimized in various ways. Importantly, this generator does not include the penguin outer. I created that separately in https://easel.inventables.com[Easel] and spaced this board to fit in its belly. That has been included as `penguin.nc`, but use your own creativity for other designs. You may need to adjust the offsets of the board if you are fitting another design around the holes.
