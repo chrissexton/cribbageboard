@@ -46,7 +46,7 @@ func (n nc) Circle(x, y, r int, s ...string) {
 	fmt.Fprintf(n.f, "G0 X%.5f Y%.5f\n", fx, fy)
 	// For the drill operation, plunge half the bit size at a time and then
 	// resurface for material removal
-	for d := 0 - n.bitSize/2; d >= n.zDepth; d -= n.bitSize / 2 {
+	for d := n.zDepth/2; d >= n.zDepth; d += n.zDepth / 2 {
 		fmt.Fprintf(n.f, "G1 Z%.5f F9.0\n", d)
 		// If we're not at depth, we need to move up, otherwise this is a wasted
 		// instruction since we will immediately move to travel height
@@ -74,6 +74,9 @@ func (n *nc) Start(w, h int, ns ...string) {
 }
 
 func mkNC(f *os.File, zDepth, zTravel, bitSize float64) *nc {
+	if zDepth >= 0 {
+		log.Fatalf("zDepth (%.4f) must be negative.", zDepth)
+	}
 	return &nc{
 		f:       f,
 		zDepth:  zDepth,
